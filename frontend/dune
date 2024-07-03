@@ -1,0 +1,19 @@
+(executable 
+ (name main)
+ (modules main)
+ (libraries core fmt entropy_compiler)
+ (preprocess
+  (pps ppx_jane bisect_ppx --conditional)
+ )
+)
+
+(library
+ (public_name entropy.compiler)
+ (name entropy_compiler)
+ (modules entropy_compiler)
+ (libraries core fmt)
+ (preprocess
+  (pps ppx_jane bisect_ppx --conditional)
+ )
+)
+
