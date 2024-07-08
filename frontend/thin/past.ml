@@ -2,7 +2,9 @@
 
 open Ast
 
-type identifier = Variable of Var_name.t | ObjField of Var_name.t * Field_name.t
+type identifier = 
+    | Variable of Var_name.t 
+    | ObjField of Var_name.t * Field_name.t
 
 (* Possible executable expressions - note we pass in the posation of the start token to
    provide useful debugging information - which line + position the parsing errors
@@ -13,7 +15,7 @@ type expr =
     | Boolean     of pos * bool
     | Identifier  of pos * identifier
     (* optional type-parameter *)
-    | Let         of pos * type_expr option * Var_name.t * expr
+    | Let         of pos * type_expr option * modifier option * Var_name.t * expr
     (* binds variable to expression (optional type annotation) *)
     | Assign      of pos * identifier * expr
     | Consume     of pos * identifier list
@@ -84,11 +86,14 @@ match expr with
                 (Fmt.str "Objfield: %s.%s" (Var_name.to_string var_name)
                 (Field_name.to_string field_name))
         )
-    | Let (_, optional_type, var_name, bound_expr) ->
+    | Let (_, optional_type, optional_mod, var_name, bound_expr) ->
         print_expr (Fmt.str "Let var: %s" (Var_name.to_string var_name)) ;
         ( match optional_type with
-    | None            -> ()
-    | Some type_annot -> Fmt.pf ppf "Type annotation: %s" (string_of_type type_annot) ) ;
+            | None            -> ()
+            | Some type_annot -> Fmt.pf ppf "Type annotation: %s" (string_of_type type_annot) ) ;
+        ( match optional_mod with
+            | None -> ()
+            | Some modifier -> Fmt.pf ppf "Modifier: %s" (string_of_modifier modifier) ) ;
         pprint_expr ppf ~indent:new_indent bound_expr
     | Assign (loc, id, assigned_expr) ->
         print_expr "Assign" ;
