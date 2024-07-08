@@ -26,7 +26,8 @@ e.g. * has higher precedence than +  so 1 + 2 * 3  = 1 + (2 * 3)
 */
 
 %right EQUAL           
-%left PLUS MINUS LANGLE RANGLE
+%left LANGLE RANGLE DLANGLE DRANGLE LANGLECOND RANGLECOND
+%left PLUS MINUS
 %left MULT DIV REM
 %left AND OR  
 %nonassoc EXCLAMATION_MARK
@@ -154,7 +155,7 @@ expr:
     | e1=expr op=bin_op e2=expr { BinOp($startpos, op, e1, e2) }
     | e1=expr op=pipe_op e2=expr { PipeOp($startpos, op, e1, e2) }
     /* Creating / reassigning / deallocating references */
-    | LET; var_name=ID; maybe_type=option(maybe_type); EQUAL; bound_expr=expr {Let($startpos, maybe_type, Var_name.of_string var_name, bound_expr)} 
+    | LET; maybeModifier=option(modifier); var_name=ID; maybe_type=option(maybe_type); EQUAL; bound_expr=expr {Let($startpos, maybe_type, maybeModifier, Var_name.of_string var_name, bound_expr)} 
     | RANGLE; RANGLE; ids=separated_list(COMMA, identifier); LANGLE; LANGLE {Consume($startpos, ids)} 
     /* Function / Method Application */
     | obj=ID; DOT; method_name=ID; pipe_op; method_args=args {MethodApp($startpos, Var_name.of_string obj, Method_name.of_string method_name, method_args)}
