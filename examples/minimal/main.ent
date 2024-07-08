@@ -1,0 +1,15 @@
+/* 
+ *  This is a multiline comment.
+ *
+ *  This example is meant to be used in an OS, therefore main function has a return value of an integer.
+ *  All functions in entropy must return a value. Divergent functions return '~'
+ * */
+
+/* This is the main entry function. Only one module must have one. */
+fn i32 < main = {
+    // This is a minimal example, so the function is empty.
+
+    < 0;    // Returning the value 0. 
+}
+
+/* The return variable is special, because when it is assigned with any value, the function will return in. */
