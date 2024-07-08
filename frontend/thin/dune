@@ -1,0 +1,13 @@
+
+(library
+ (public_name entropy.thin)
+ (name thin)
+ (modules lexer parser past ast)
+ (libraries core fmt menhirLib))
+
+(ocamllex lexer)
+
+(menhir 
+ (modules parser)
+ (flags --explain --inspection --table --dump)
+)
