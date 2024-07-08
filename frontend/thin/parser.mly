@@ -151,8 +151,8 @@ expr:
     | id=identifier { Identifier($startpos, id) }
     /* Unary / Binary / Pipe ops */
     | op=un_op e=expr { UnOp($startpos, op, e) }
-    | e1=expr op=pipe_op e2=expr { PipeOp($startpos, op, e1, e2) }
     | e1=expr op=bin_op e2=expr { BinOp($startpos, op, e1, e2) }
+    | e1=expr op=pipe_op e2=expr { PipeOp($startpos, op, e1, e2) }
     /* Creating / reassigning / deallocating references */
     | LET; var_name=ID; maybe_type=option(maybe_type); EQUAL; bound_expr=expr {Let($startpos, maybe_type, Var_name.of_string var_name, bound_expr)} 
     | RANGLE; RANGLE; ids=separated_list(COMMA, identifier); LANGLE; LANGLE {Consume($startpos, ids)} 
