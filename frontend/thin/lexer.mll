@@ -24,7 +24,7 @@ let int = '-'? digit+
 let id = (alpha) (alpha|digit|'_')*
 let generic_type_param =  ['A'-'Z']
 
-    let whitespace = [' ' '\t']+
+let whitespace = [' ' '\t']+
 let newline = '\r' | '\n' | "\r\n"
 
 (* Lexer Rules
@@ -79,7 +79,6 @@ let newline = '\r' | '\n' | "\r\n"
     | "const" { CONST }
     | "mut" { MUT }
     | "in" { IN }
-    | generic_type_param { GENERIC_TYPE }
     | "*" { BORROWED }
     | "&" { REF }
 
@@ -89,6 +88,7 @@ let newline = '\r' | '\n' | "\r\n"
     | "if" { IF }
     | "else" { ELSE }
     | "for" { FOR }
+    | generic_type_param { GENERIC_TYPE }
     | whitespace { read_token lexbuf }
     | "//" { read_single_line_comment lexbuf }
     | "/*" { read_multi_line_comment lexbuf } 
