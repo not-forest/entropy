@@ -1,11 +1,11 @@
 (*  Main module that starts the compilation pipeline. 
 
     This is a command line application that takes arguments from the standard input and outputs an entropy compiled
-    binary. Execution options for 'entc' compiler are defined below:
+    binary. This module only uses the compiler API to start a compilation pipeline. Execution options for 'entc' compiler are defined below:
 
     --------------------------------- Use ---------------------------------
 
-    entc [INPUT_FILES] (FLAGS)
+    entc <file1> [<file2>] ... (FLAGS)
 
     -------------------------------- Flags --------------------------------
 
