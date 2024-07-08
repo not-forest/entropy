@@ -3,7 +3,7 @@ name: "entc"
 version: "0.1"
 synopsis: "A language for image processing"
 description: """
-Entropy is a compiler, high-performance, pure functional programming language designed specifically for image processing, machine vision and edge AI applications,
+Entropy is a compiled, high-performance, functional programming language designed specifically for image processing, machine vision and edge AI applications,
 tailored for both embedded micro-controllers and high-end computing systems.
 """
 authors: ["Serhii Shkliaiev (not-forest)"]
@@ -19,6 +19,7 @@ depends: [
     "bisect_ppx" {>= "2.2.0"}
     "ppx_tools_versioned" {>= "5.3.0"}
     "ppx_jane" {>= "v0.12.0"}
+    "menhir"{= "20190924"}
 ]
 build: [
     ["dune" "build" "-p" name "-j" jobs]
