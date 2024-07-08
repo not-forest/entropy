@@ -1,0 +1,14 @@
+/*
+ *  This example shows a simple use of a function that is being defined.
+ */
+
+/* Here is how a simple addition function implementation might look like. */
+fn u8 < add a: u8, b: u8 = {
+    < a + b;
+}
+
+fn i32 < main = {
+    let a = 3;
+    
+    < add < a, 2;
+}
