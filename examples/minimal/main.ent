@@ -6,10 +6,6 @@
  * */
 
 /* This is the main entry function. Only one module must have one. */
-fn i32 < main = {
-    // This is a minimal example, so the function is empty.
-
-    < 0;    // Returning the value 0. 
-}
+fn i32 !< main = 0;
 
 /* The return variable is special, because when it is assigned with any value, the function will return in. */
