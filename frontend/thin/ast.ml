@@ -86,19 +86,11 @@ let get_params_types params =
 (* BINARY OPERATORS *)
 
 type bin_op =
-    | BinOpPlus
-    | BinOpMinus
-    | BinOpMult
-    | BinOpIntDiv
-    | BinOpRem
-    | BinOpLessThan
-    | BinOpLessThanEq
-    | BinOpGreaterThan
-    | BinOpGreaterThanEq
-    | BinOpAnd
-    | BinOpOr
-    | BinOpEq
-    | BinOpNotEq
+    | BinOpPlus | BinOpMinus
+    | BinOpMult | BinOpIntDiv | BinOpRem
+    | BinOpLessThan | BinOpLessThanEq | BinOpGreaterThan | BinOpGreaterThanEq
+    | BinOpAnd | BinOpOr | BinOpLOr | BinOpLAnd
+    | BinOpEq | BinOpNotEq
 
 let string_of_bin_op = function
     | BinOpPlus          -> "+"
@@ -110,35 +102,41 @@ let string_of_bin_op = function
     | BinOpLessThanEq    -> "<="
     | BinOpGreaterThan   -> ">"
     | BinOpGreaterThanEq -> ">="
-    | BinOpAnd           -> "&&"
-    | BinOpOr            -> "||"
+    | BinOpAnd           -> "&"
+    | BinOpLAnd          -> "&&"
+    | BinOpOr            -> "|"
+    | BinOpLOr           -> "||"
     | BinOpEq            -> "=="
     | BinOpNotEq         -> "!="
 
 (* UNARY OPERATIONS *)
 
 type un_op = 
-    | UnOpNot 
+    | UnOpNot | UnOpLNot 
+    | UnOpAbs | UnOpNorm
     | UnOpNeg
     | UnOpRet
 
 let string_of_un_op = function 
-    | UnOpNot -> "!" 
-    | UnOpNeg -> "-"
-    | UnOpRet -> "RETURN"
+    | UnOpNot            -> "~" 
+    | UnOpLNot           -> "!"
+    | UnOpAbs            -> "|x|"
+    | UnOpNorm           -> "||x||"
+    | UnOpNeg            -> "-"
+    | UnOpRet            -> "!<"
 
 (* PIPE OPERATIONS *)
 type pipe_op =
     | PipeOpLeft
-    | PipeOpCondLeft
+    | PipeOpBindLeft
     | PipeOpRight
-    | PipeOpCondRight 
+    | PipeOpBindRight 
 
 let string_of_pipe_op = function
-    | PipeOpLeft -> "<"
-    | PipeOpCondLeft -> "<-"
-    | PipeOpRight -> ">"
-    | PipeOpCondRight -> "->"
+    | PipeOpLeft -> "<<"
+    | PipeOpBindLeft -> "<="
+    | PipeOpRight -> ">>"
+    | PipeOpBindRight -> "=>"
 
 (* Exceptions *)
 
