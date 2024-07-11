@@ -11,8 +11,9 @@
 %token <int> INT
 %token <char> CHAR
 %token <string> ID STRING MODNAME
-%token LPAREN RPAREN LBRACE RBRACE LANGLE RANGLE DLANGLE DRANGLE LANGLECOND RANGLECOND COMMA DOT COLON SEMICOLON EQUAL TAKE
-%token PLUS MINUS MULT DIV REM AND OR EXCLAMATION_MARK TILDE
+%token LPAREN RPAREN LBRACE RBRACE LANGLE RANGLE DLANGLE DRANGLE LARROW RARROW FATLARROW FATRARROW COMMA DOT COLON SEMICOLON EQUAL TAKE
+%token RETURN
+%token PLUS MINUS MULT DIV MOD AND OR DAND DOR EXCLAMATION_MARK TILDE
 %token LET CONST MUT FUNCTION IN REF ASYNC STRUCT GENERIC_TYPE, INCLUDE
 %token T_I8 T_I16 T_I32 T_I64 T_I128 T_U8 T_U16 T_U32 T_U64 T_U128 T_BOOL T_EMPTY
 %token BORROWED TRUE FALSE IF ELSE FOR WHILE EOF
@@ -26,11 +27,11 @@ e.g. * has higher precedence than +  so 1 + 2 * 3  = 1 + (2 * 3)
 */
 
 %right EQUAL           
-%left LANGLE RANGLE DLANGLE DRANGLE LANGLECOND RANGLECOND
+%left LANGLE RANGLE DLANGLE DRANGLE LARROW RARROW FATLARROW FATRARROW
 %left PLUS MINUS
-%left MULT DIV REM
-%left AND OR  
-%nonassoc EXCLAMATION_MARK
+%left MULT DIV MOD
+%left DOR DAND AND OR 
+%nonassoc EXCLAMATION_MARK TILDE RETURN
 
 %start program 
 
@@ -62,7 +63,6 @@ e.g. * has higher precedence than +  so 1 + 2 * 3  = 1 + (2 * 3)
 
 %type <un_op> un_op
 %type <bin_op> bin_op
-
 
 %% /* Start grammar productions */
 
@@ -105,7 +105,7 @@ params:
     | params=separated_list(COMMA,param) {params}
 
 function_defn: 
-    | FUNCTION; maybeBorrowed=option(borrowed_ref); return_type=type_expr; LANGLE; function_name=ID; function_params=params; EQUAL; body=block_expr {TFunction(Function_name.of_string function_name, maybeBorrowed, return_type, function_params, body)}
+    | FUNCTION; maybeBorrowed=option(borrowed_ref); return_type=type_expr; RETURN; function_name=ID; function_params=params; EQUAL; body=block_expr {TFunction(Function_name.of_string function_name, maybeBorrowed, return_type, function_params, body)}
 
 method_defn: 
     | maybeBorrowed=option(borrowed_ref); return_type=type_expr; LANGLE; method_name=ID; method_params=params; EQUAL; body=block_expr {TMethod(Method_name.of_string method_name, maybeBorrowed, return_type, method_params, body)}
@@ -135,12 +135,14 @@ identifier:
 /* Expressions */
 block_expr:
     | LBRACE; exprs=separated_list(SEMICOLON, option(expr)); RBRACE {Block($startpos, exprs)}
+    | expr=option(expr); SEMICOLON {Block($startpos, [expr])}
 
 for_expr:
     | init_expr=expr; SEMICOLON; cond_expr=expr; SEMICOLON; step_expr=expr; loop_expr=block_expr {For($startpos, init_expr, cond_expr, step_expr, loop_expr)} 
 
 if_expr:
-    | cond_expr=expr; then_expr=block_expr; ELSE; else_expr=option(block_expr) {If($startpos, cond_expr, then_expr, else_expr)}
+    | cond_expr=expr; then_expr=block_expr; ELSE; else_expr=block_expr {If($startpos, cond_expr, then_expr, Some else_expr)}
+    | cond_expr=expr; then_expr=block_expr; {If($startpos, cond_expr, then_expr, None)}
 
 expr:
     /* Classic op expressions */
@@ -150,10 +152,12 @@ expr:
     | TRUE { Boolean($startpos, true)}
     | FALSE { Boolean($startpos, false) }
     | id=identifier { Identifier($startpos, id) }
-    /* Unary / Binary / Pipe ops */
+    /* Unary / Binary / Pipe / Additional ops */
     | op=un_op e=expr { UnOp($startpos, op, e) }
     | e1=expr op=bin_op e2=expr { BinOp($startpos, op, e1, e2) }
     | e1=expr op=pipe_op e2=expr { PipeOp($startpos, op, e1, e2) }
+    | OR; e=expr; OR { UnOp($startpos, UnOpAbs, e) } 
+    | DOR; e=expr; DOR { UnOp($startpos, UnOpNorm, e) } 
     /* Creating / reassigning / deallocating references */
     | LET; maybeModifier=option(modifier); var_name=ID; maybe_type=option(maybe_type); EQUAL; bound_expr=expr {Let($startpos, maybe_type, maybeModifier, Var_name.of_string var_name, bound_expr)} 
     | RANGLE; RANGLE; ids=separated_list(COMMA, identifier); LANGLE; LANGLE {Consume($startpos, ids)} 
@@ -173,27 +177,30 @@ async_expr:
 /* Operator expressions */
 
 %inline un_op:
-    | EXCLAMATION_MARK { UnOpNot }
+    | TILDE { UnOpNot }
+    | EXCLAMATION_MARK { UnOpLNot }
     | MINUS { UnOpNeg }
-    | LANGLE { UnOpRet }
+    | RETURN { UnOpRet }
 
 %inline bin_op:
     | PLUS { BinOpPlus }
     | MINUS { BinOpMinus }
     | MULT { BinOpMult }
     | DIV { BinOpIntDiv } 
-    | REM { BinOpRem }
-    | DLANGLE { BinOpLessThan }
+    | MOD { BinOpRem }
+    | LANGLE { BinOpLessThan }
     | LANGLE EQUAL { BinOpLessThanEq }
-    | DRANGLE { BinOpGreaterThan }
+    | RANGLE { BinOpGreaterThan }
     | RANGLE EQUAL { BinOpGreaterThanEq }
     | AND { BinOpAnd }
     | OR { BinOpOr }
+    | DOR { BinOpLOr }
+    | DAND { BinOpLAnd }
     | EQUAL EQUAL { BinOpEq }
     | EXCLAMATION_MARK EQUAL { BinOpNotEq }
 
 %inline pipe_op:
-    | LANGLE { PipeOpLeft }
-    | LANGLECOND { PipeOpCondLeft }
-    | RANGLE { PipeOpRight }
-    | RANGLECOND { PipeOpCondRight }
+    | DLANGLE { PipeOpLeft }
+    | FATLARROW { PipeOpBindLeft }
+    | DRANGLE { PipeOpRight }
+    | FATRARROW { PipeOpBindRight }
