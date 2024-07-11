@@ -47,15 +47,20 @@ let newline = '\r' | '\n' | "\r\n"
     | "-" { MINUS }
     | "*" { MULT } 
     | "/" { DIV }
-    | "%" { REM }
+    | "%" { MOD }
     | "<" { LANGLE }
     | ">" { RANGLE }
     | "<<" { DLANGLE }
     | ">>" { DRANGLE }
-    | "<-" { LANGLECOND }
-    | "->" { RANGLECOND }
-    | "&&" { AND }
-    | "||" { OR }
+    | "<-" { LARROW }
+    | "->" { RARROW }
+    | "<=" { FATLARROW }
+    | "=>" { FATRARROW }
+    | "!<" { RETURN }
+    | "&"  { AND }
+    | "|"  { OR }
+    | "&&" { DAND }
+    | "||" { DOR }
     | "::" { TAKE }
     | "!" { EXCLAMATION_MARK }
     | "~" { TILDE }
