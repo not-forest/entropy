@@ -55,15 +55,28 @@ type method_defn =
    it inherits from another struct, its capabilities and the fields and methods in the
    struct *)
 type struct_defn =
-  | TStruct of
-      Struct_name.t
-      * generic_type option
-      * field_defn list
-      * method_defn list
+    | TStruct of
+        Struct_name.t
+        * generic_type option
+        * field_defn list
+        * method_defn list
+
+type union_defn =
+    | TUnion of
+        Union_name.t
+        * generic_type option
+        * field_defn list
+        * method_defn list
+
+let type_expr_of_struct = function
+    | TStruct (name, _, _, _) -> TEstruct (name, None)
+
+let type_expr_of_union = function
+    | TUnion (name, _, _, _) -> TEunion (name, None)
 
 (* Each program defines the structes,followed by functions, followed by the main
    expression to execute. *)
-type program = Prog of struct_defn list * function_defn list
+type program = Prog of struct_defn list * union_defn list * function_defn list
 
 module PastPP = struct
 open Ast
@@ -90,7 +103,7 @@ match expr with
         print_expr (Fmt.str "Let var: %s" (Var_name.to_string var_name)) ;
         ( match optional_type with
             | None            -> ()
-            | Some type_annot -> Fmt.pf ppf "Type annotation: %s" (string_of_type type_annot) ) ;
+            | Some type_annot -> Fmt.pf ppf "Type annotation: %s\n" (string_of_type type_annot) ) ;
         ( match optional_mod with
             | None -> ()
             | Some modifier -> Fmt.pf ppf "Modifier: %s" (string_of_modifier modifier) ) ;
@@ -192,16 +205,30 @@ let pprint_struct_defn ppf ~indent
       , maybe_generic
       , field_defns
       , method_defns )) =
-  Fmt.pf ppf "%sStruct: %s%s." indent
+  Fmt.pf ppf "%sStruct: %s<%s>\n" indent
     (Struct_name.to_string struct_name)
-    (string_of_maybe_generic maybe_generic) ;
+    (string_of_maybe_generics maybe_generic) ;
   let new_indent = indent_space ^ indent in
   List.iter ~f:(AstPP.pprint_field_defn ppf ~indent:new_indent) field_defns ;
   List.iter ~f:(pprint_method_defn ppf ~indent:new_indent) method_defns
 
-let pprint_program ppf (Prog (struct_defns, function_defns)) =
+let pprint_union_defn ppf ~indent
+    (TUnion
+      ( struct_name
+      , maybe_generic
+      , field_defns
+      , method_defns )) =
+  Fmt.pf ppf "%sUnion: %s%s.\n" indent
+    (Union_name.to_string struct_name)
+    (string_of_maybe_generics maybe_generic) ;
+  let new_indent = indent_space ^ indent in
+  List.iter ~f:(AstPP.pprint_field_defn ppf ~indent:new_indent) field_defns ;
+  List.iter ~f:(pprint_method_defn ppf ~indent:new_indent) method_defns
+
+let pprint_program ppf (Prog (struct_defns, union_defns, function_defns)) =
   Fmt.pf ppf "Program@." ;
   let indent = "└──" in
   List.iter ~f:(pprint_struct_defn ppf ~indent) struct_defns ;
+  List.iter ~f:(pprint_union_defn ppf ~indent) union_defns ;
   List.iter ~f:(pprint_function_defn ppf ~indent) function_defns
 end
