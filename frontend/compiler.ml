@@ -36,31 +36,30 @@ let anon_fun filename = ifiles := filename :: !ifiles
 
 (* Prints the line number and character number where the error occurred.*)
 let print_error_position lexbuf =
-  let pos = lexbuf.lex_curr_p in
-  Fmt.str "Line:%d Position:%d" pos.pos_lnum (pos.pos_cnum - pos.pos_bol + 1)
+    let pos = lexbuf.lex_curr_p in
+    Fmt.str "Line:%d Position:%d" pos.pos_lnum (pos.pos_cnum - pos.pos_bol + 1)
 
 let parse_program lexbuf =
     (* catch exception and turn into Error *)
-  try Ok (Parser.program Lexer.read_token lexbuf) with
-  | Lexer.SyntaxError msg ->
-      let error_msg = Fmt.str "%s: %s@." (print_error_position lexbuf) msg in
-      Error (Core.Error.of_string error_msg)
-  | Parser.Error ->
-      let error_msg = Fmt.str "%s: syntax error@." (print_error_position lexbuf) in
-      Error (Core.Error.of_string error_msg)
+    try Ok (Parser.program Lexer.read_token lexbuf) with
+    | Lexer.SyntaxError msg ->
+        let error_msg = Fmt.str "%s: %s@." (print_error_position lexbuf) msg in
+        Error (Core.Error.of_string error_msg)
+    | Parser.Error ->
+        let error_msg = Fmt.str "%s: syntax error@." (print_error_position lexbuf) in
+        Error (Core.Error.of_string error_msg)
 
 (** Parsing each input file *)
 let parse_file filename =
-  let chan = open_in_bin filename in
-  let lexbuf = from_channel chan in
-  let result =
-    try parse_program lexbuf
-    with e ->
-      close_in_noerr chan;
-      raise e
-  in
-  close_in_noerr chan;
-  result
+    let chan = open_in_bin filename in
+    let lexbuf = from_channel chan in
+    let result =
+        try parse_program lexbuf with e ->
+            close_in_noerr chan;
+            raise e
+    in
+    close_in_noerr chan;
+    result
 
 (** Main compilation area. *)
 let compile () = 
