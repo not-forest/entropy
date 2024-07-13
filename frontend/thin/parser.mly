@@ -1,6 +1,10 @@
 /* Parser tokens definitions */
 
 %{
+    let anonym_structs = ref []
+    let anonym_unions = ref []
+(*     let anonym_functions = ref [] *)
+    
     [@@@coverage exclude_file]
     open Ast
     open Past
@@ -9,12 +13,12 @@
 /* Token definitions */
 
 %token <int> INT
-%token <char> CHAR
+%token <char> CHAR GENERIC
 %token <string> ID STRING MODNAME
 %token LPAREN RPAREN LBRACE RBRACE LANGLE RANGLE DLANGLE DRANGLE LARROW RARROW FATLARROW FATRARROW COMMA DOT COLON SEMICOLON EQUAL TAKE
 %token RETURN
-%token PLUS MINUS MULT DIV MOD AND OR DAND DOR EXCLAMATION_MARK TILDE
-%token LET CONST MUT FUNCTION IN REF ASYNC STRUCT GENERIC_TYPE, INCLUDE
+%token PLUS MINUS MULT DIV MOD POWER ROOT AND OR DAND DOR EXCLAMATION_MARK TILDE
+%token LET CONST MUT FUNCTION IN REF ASYNC STRUCT UNION ENUM INCLUDE MATCH
 %token T_I8 T_I16 T_I32 T_I64 T_I128 T_U8 T_U16 T_U32 T_U64 T_U128 T_BOOL T_EMPTY
 %token BORROWED TRUE FALSE IF ELSE FOR WHILE EOF
 
@@ -30,6 +34,7 @@ e.g. * has higher precedence than +  so 1 + 2 * 3  = 1 + (2 * 3)
 %left LANGLE RANGLE DLANGLE DRANGLE LARROW RARROW FATLARROW FATRARROW
 %left PLUS MINUS
 %left MULT DIV MOD
+%left POWER ROOT
 %left DOR DAND AND OR 
 %nonassoc EXCLAMATION_MARK TILDE RETURN
 
@@ -67,19 +72,43 @@ e.g. * has higher precedence than +  so 1 + 2 * 3  = 1 + (2 * 3)
 %% /* Start grammar productions */
 
 program: 
-    | struct_defns=list(struct_defn); function_defns=list(function_defn); EOF {Prog(struct_defns, function_defns)}
+    | struct_defns=list(struct_defn);
+      union_defns=list(union_defn);
+      function_defns=list(function_defn);
+      EOF 
+      {Prog(
+        struct_defns @ !anonym_structs, 
+        union_defns @ !anonym_unions, 
+        function_defns)
+      }
 
 /* Imports / Preprocessing */
 // TODO
 
-/* Productions related to struct definitions */
+/* Productions related to struct/union/enums definitions */
 
 struct_defn:
-    | STRUCT; name=ID; maybe_generic=option(generic_type); LBRACE; field_defns=nonempty_list(field_defn); method_defns=list(method_defn); RBRACE 
-    {TStruct(Struct_name.of_string name, maybe_generic, field_defns, method_defns)}
+    | STRUCT; name=option(ID); maybe_generic=option(generic_type); EQUAL LBRACE; field_defns=list(field_defn); method_defns=list(method_defn); RBRACE 
+        {TStruct(Struct_name.of_string (name_or_anonym name), maybe_generic, field_defns, method_defns)}
+    | STRUCT; name=option(ID); maybe_generic=option(generic_type); EQUAL field_defns=list(field_defn);
+        {TStruct(Struct_name.of_string (name_or_anonym name), maybe_generic, field_defns, [])}
+    | STRUCT; name=option(ID); maybe_generic=option(generic_type); SEMICOLON 
+        {TStruct(Struct_name.of_string (name_or_anonym name), maybe_generic, [], [])}
+
+union_defn:
+    | UNION; name=option(ID); maybe_generic=option(generic_type); EQUAL; LBRACE; field_defns=list(field_defn); method_defns=list(method_defn); RBRACE 
+        {TUnion(Union_name.of_string (name_or_anonym name), maybe_generic, field_defns, method_defns)}
+    | UNION; name=option(ID); maybe_generic=option(generic_type); EQUAL; field_defns=list(field_defn) 
+        {TUnion(Union_name.of_string (name_or_anonym name), maybe_generic, field_defns, [])}
+    | ENUM; name=option(ID); maybe_generic=option(generic_type); EQUAL; option(OR); variant_defns=separated_list(OR, variant_defn) 
+        {TUnion(Union_name.of_string (name_or_anonym name), maybe_generic, variant_defns, [])}
+    | UNION; name=option(ID); maybe_generic=option(generic_type); SEMICOLON 
+        {TUnion(Union_name.of_string (name_or_anonym name), maybe_generic, [], [])}
+    | ENUM; name=option(ID); maybe_generic=option(generic_type); SEMICOLON 
+        {TUnion(Union_name.of_string (name_or_anonym name), maybe_generic, [], [])}
 
 generic_type:
-    | LANGLE GENERIC_TYPE RANGLE { Generic }
+    | LANGLE generics=separated_list(COMMA, GENERIC) RANGLE { Generic(generics) }
 
 borrowed_ref:
     | BORROWED {Borrowed}
@@ -94,7 +123,10 @@ modifier:
     | MUT {Mmut}
 
 field_defn:
-    | m=modifier; field_name=ID; maybe_type=option(maybe_type); SEMICOLON {TField(m, maybe_type, Field_name.of_string field_name)}
+    | maybeModifier=option(modifier); field_name=ID; maybe_type=option(maybe_type); SEMICOLON {TField(maybeModifier, maybe_type, Field_name.of_string field_name)}
+
+variant_defn:
+    | field_name=ID; maybe_type=option(maybe_type); {TField(None, maybe_type, Field_name.of_string field_name)}
 
 /* Method and function definitions */
 
@@ -116,13 +148,22 @@ parameterised_type:
     | LANGLE type_param=type_expr RANGLE {type_param}
 
 type_expr: 
-    | struct_name=ID maybe_param_type=option(parameterised_type) {TEstruct(Struct_name.of_string struct_name, maybe_param_type)}
+    | s=struct_type_expr {s}
+    | u=union_type_expr {u}
     | TILDE { TEDiverge }
     | T_U8 {TEu8} | T_U16 {TEu16} | T_U32 {TEu32} | T_U64 {TEu64} | T_U128 {TEu128}
     | T_I8 {TEi8} | T_I16 {TEi16} | T_I32 {TEi32} | T_I64 {TEi64} | T_I128 {TEi128}
     | T_BOOL {TEBool}
     | T_EMPTY {TEEmpty}
-    | GENERIC_TYPE {TEGeneric}
+    | g=GENERIC { TEGeneric(g) }
+
+struct_type_expr:
+    | struct_name=ID maybe_param_type=option(parameterised_type) {TEstruct(Struct_name.of_string struct_name, maybe_param_type)}
+    | struct_defn=struct_defn {anonym_structs := !anonym_structs @ [struct_defn]; type_expr_of_struct struct_defn}
+
+union_type_expr:
+    | union_name=ID maybe_param_type=option(parameterised_type) {TEunion(Union_name.of_string union_name, maybe_param_type)}
+    | union_defn=union_defn {anonym_unions := !anonym_unions @ [union_defn]; type_expr_of_union union_defn}
 
 /* Method / function arguments */
 args:
@@ -188,6 +229,9 @@ async_expr:
     | MULT { BinOpMult }
     | DIV { BinOpIntDiv } 
     | MOD { BinOpRem }
+    | POWER { BinOpPower }
+    | ROOT { BinOpRoot }
+
     | LANGLE { BinOpLessThan }
     | LANGLE EQUAL { BinOpLessThanEq }
     | RANGLE { BinOpGreaterThan }
