@@ -15,3 +15,4 @@ val wall        : bool ref
     
 val anon_fun    : string -> unit
 val compile     : unit -> unit
+val parse_file  : string -> (Thin.Past.program, Base.Error.t) result 
