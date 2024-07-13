@@ -18,10 +18,28 @@
 let digit = ['0'-'9']
 let alpha = ['a'-'z' 'A'-'Z']
 let character = '\'' alpha '\''
+let greek = "a" | "α" | "β" | "γ" | "δ" | "ε" | "ζ" | "η" | "θ" | "ι" | "κ" | "λ" | "μ" | "ν" | "ξ" | "ο" | "π" | "ρ" | "σ" 
+    | "τ" | "υ" | "φ" | "χ" | "ψ" | "ω" | "Ά" | "Έ" | "Ή" | "Ί" | "Ό" | "Ύ" | "Ώ" | "ά" | "έ" | "ή" | "ί" | "ϊ" | "ϋ" | "ό" 
+    | "ύ" | "ώ" | "ϐ" | "ϑ" | "ϒ" | "ϓ" | "ϔ" | "ϕ" | "ϖ" | "ϗ" | "Ϙ" | "ϙ" | "Ϛ" | "ϛ" | "Ϝ" | "ϝ" | "Ϟ" | "ϟ" | "Ϡ" | "ϡ" 
+    | "Ϣ" | "ϣ" | "Ϥ" | "ϥ" | "Ϧ" | "ϧ" | "Ϩ" | "ϩ" | "Ϫ" | "ϫ" | "Ϭ" | "ϭ" | "Ϯ" | "ϯ" | "ϰ" | "ϱ" | "ϲ" | "ϳ" | "ϴ" | "ϵ" 
+    | "϶" | "Ϸ" | "ϸ" | "Ϲ" | "Ϻ" | "ϻ" | "ϼ" | "Ͻ" | "Ͼ" | "Ͽ" | "ἀ" | "ἁ" | "ἂ" | "ἃ" | "ἄ" | "ἅ" | "ἆ" | "ἇ" | "Ἀ" | "Ἁ" 
+    | "Ἂ" | "Ἃ" | "Ἄ" | "Ἅ" | "Ἆ" | "Ἇ" | "ἐ" | "ἑ" | "ἒ" | "ἓ" | "ἔ" | "ἕ" | "἖" | "἗" | "Ἐ" | "Ἑ" | "Ἒ" | "Ἓ" | "Ἔ" | "Ἕ" 
+    | "἞" | "἟" | "ἠ" | "ἡ" | "ἢ" | "ἣ" | "ἤ" | "ἥ" | "ἦ" | "ἧ" | "Ἠ" | "Ἡ" | "Ἢ" | "Ἣ" | "Ἤ" | "Ἥ" | "Ἦ" | "Ἧ" | "ἰ" | "ἱ" 
+    | "ἲ" | "ἳ" | "ἴ" | "ἵ" | "ἶ" | "ἷ" | "Ἰ" | "Ἱ" | "Ἲ" | "Ἳ" | "Ἴ" | "Ἵ" | "Ἶ" | "Ἷ" | "ὀ" | "ὁ" | "ὂ" | "ὃ" | "ὄ" | "ὅ" 
+    | "὆" | "὇" | "Ὀ" | "Ὁ" | "Ὂ" | "Ὃ" | "Ὄ" | "Ὅ" | "὎" | "὏" | "ὐ" | "ὑ" | "ὒ" | "ὓ" | "ὔ" | "ὕ" | "ὖ" | "ὗ" | "὘" | "Ὑ" 
+    | "὚" | "Ὓ" | "὜" | "Ὕ" | "὞" | "Ὗ" | "ὠ" | "ὡ" | "ὢ" | "ὣ" | "ὤ" | "ὥ" | "ὦ" | "ὧ" | "Ὠ" | "Ὡ" | "Ὢ" | "Ὣ" | "Ὤ" | "Ὥ" 
+    | "Ὦ" | "Ὧ" | "ὰ" | "ά" | "ὲ" | "έ" | "ὴ" | "ή" | "ὶ" | "ί" | "ὸ" | "ό" | "ὺ" | "ύ" | "ὼ" | "ώ" | "὾" | "὿" | "ᾀ" | "ᾁ" 
+    | "ᾂ" | "ᾃ" | "ᾄ" | "ᾅ" | "ᾆ" | "ᾇ" | "ᾈ" | "ᾉ" | "ᾊ" | "ᾋ" | "ᾌ" | "ᾍ" | "ᾎ" | "ᾏ" | "ᾐ" | "ᾑ" | "ᾒ" | "ᾓ" | "ᾔ" | "ᾕ" 
+    | "ᾖ" | "ᾗ" | "ᾘ" | "ᾙ" | "ᾚ" | "ᾛ" | "ᾜ" | "ᾝ" | "ᾞ" | "ᾟ" | "ᾠ" | "ᾡ" | "ᾢ" | "ᾣ" | "ᾤ" | "ᾥ" | "ᾦ" | "ᾧ" | "ᾨ" | "ᾩ" 
+    | "ᾪ" | "ᾫ" | "ᾬ" | "ᾭ" | "ᾮ" | "ᾯ" | "ᾰ" | "ᾱ" | "ᾲ" | "ᾳ" | "ᾴ" | "᾵" | "ᾶ" | "ᾷ" | "Ᾰ" | "Ᾱ" | "Ὰ" | "Ά" | "ᾼ" | "᾽" 
+    | "ι" | "᾿" | "῁" | "ῂ" | "ῃ" | "ῄ" | "῅" | "ῆ" | "ῇ" | "Ὲ" | "Έ" | "Ὴ" | "Ή" | "ῌ" | "῍" | "῎" | "῏" | "ῐ" | "ῑ" | "ῒ" 
+    | "ΐ" | "῔" | "῕" | "ῖ" | "ῗ" | "Ῐ" | "Ῑ" | "Ὶ" | "Ί" | "῜" | "῝" | "῞" | "῟" | "ῠ" | "ῡ" | "ῢ" | "ΰ" | "ῤ" | "ῥ" | "ῦ" 
+    | "ῧ" | "Ῠ" | "Ῡ" | "Ὺ" | "Ύ" | "Ῥ" | "῭" | "΅" | "`" | "῰" | "῱" | "ῲ" | "ῳ" | "ῴ" | "῵" | "ῶ" | "ῷ" | "Ὸ" | "Ό" | "Ὼ" 
+    | "Ώ" | "ῼ" | "´" | "῾"
 
 (* Regexes for tokens *)
 let int = '-'? digit+
-let id = (alpha) (alpha|digit|'_')*
+let id = ((alpha) (alpha|digit|'_')*) | greek
 let generic_type_param =  ['A'-'Z']
 
 let whitespace = [' ' '\t']+
@@ -48,6 +66,8 @@ let newline = '\r' | '\n' | "\r\n"
     | "*" { MULT } 
     | "/" { DIV }
     | "%" { MOD }
+    | "^" { POWER }
+    | "-/" { ROOT }
     | "<" { LANGLE }
     | ">" { RANGLE }
     | "<<" { DLANGLE }
@@ -84,6 +104,10 @@ let newline = '\r' | '\n' | "\r\n"
     | "const" { CONST }
     | "mut" { MUT }
     | "in" { IN }
+    | "struct" { STRUCT }
+    | "union" { UNION }
+    | "enum" { ENUM }
+    | "match" { MATCH }
     | "*" { BORROWED }
     | "&" { REF }
 
@@ -93,7 +117,7 @@ let newline = '\r' | '\n' | "\r\n"
     | "if" { IF }
     | "else" { ELSE }
     | "for" { FOR }
-    | generic_type_param { GENERIC_TYPE }
+    | generic_type_param { GENERIC (Lexing.lexeme lexbuf).[0] }
     | whitespace { read_token lexbuf }
     | "//" { read_single_line_comment lexbuf }
     | "/*" { read_multi_line_comment lexbuf } 
@@ -103,18 +127,20 @@ let newline = '\r' | '\n' | "\r\n"
     | '"' { read_string (Buffer.create 17) lexbuf }
     | newline { next_line lexbuf; read_token lexbuf }
     | eof { EOF }
-    | _ {raise (SyntaxError ("Illegal character: " ^ Lexing.lexeme lexbuf)) }
+    | _ {
+        raise (SyntaxError ("Illegal character: " ^ Lexing.lexeme lexbuf)) 
+    }
 
     and read_single_line_comment = parse
-        | newline { next_line lexbuf; read_token lexbuf } 
-        | eof { EOF }
-        | _ { read_single_line_comment lexbuf } 
+    | newline { next_line lexbuf; read_token lexbuf } 
+    | eof { EOF }
+    | _ { read_single_line_comment lexbuf } 
 
     and read_multi_line_comment = parse
-        | "*/" { read_token lexbuf } 
-        | newline { next_line lexbuf; read_multi_line_comment lexbuf } 
-        | eof { raise (SyntaxError ("Unexpected EOF - please terminate your comment.")) }
-        | _ { read_multi_line_comment lexbuf } 
+    | "*/" { read_token lexbuf } 
+    | newline { next_line lexbuf; read_multi_line_comment lexbuf } 
+    | eof { raise (SyntaxError ("Unexpected EOF - please terminate your comment.")) }
+    | _ { read_multi_line_comment lexbuf } 
 
     and read_string buf = parse
     | '"'       { STRING (Buffer.contents buf) }
