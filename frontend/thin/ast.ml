@@ -2,6 +2,17 @@
 
 open Base
 
+(** This global counter is used for creating unique anonymous types *)
+let anonym_counter = ref 0
+
+let next_anonym_name () =
+    Core.incr anonym_counter;
+    "ANONYM_" ^ Core.string_of_int !anonym_counter
+
+let name_or_anonym = function
+    | Some name -> name
+    | None -> next_anonym_name ()
+
 type pos = Lexing.position
 
 let string_of_pos pos =
@@ -26,6 +37,7 @@ end
 
 module Var_name : ID = String_id
 module Struct_name : ID = String_id
+module Union_name : ID = String_id
 module Field_name : ID = String_id
 module Method_name : ID = String_id
 module Function_name : ID = String_id
@@ -45,11 +57,11 @@ type borrowed_ref = Borrowed
 
 let string_of_maybe_borrowed_ref = function Some Borrowed -> "Borrowed " | None -> ""
 
-(* If struct is type-parameterised *)
-type generic_type = Generic
+(* If struct/enum is type-parameterised *)
+type generic_type = Generic of char list
 
-let string_of_maybe_generic = function 
-    | Some Generic -> "<T>" 
+let string_of_maybe_generics = function 
+    | Some Generic c -> String.concat ~sep:", " (List.map ~f:(String.make 1) c)
     | None -> ""
 
 type type_expr =
@@ -58,24 +70,33 @@ type type_expr =
     | TEDiverge
     | TEBool
     | TEEmpty
-    | TEGeneric
-    | TEstruct of Struct_name.t * type_expr option  (** optionally specify type parameters *)
+    | TEGeneric of char
+    (** optionally specify type parameters *)
+    | TEstruct of Struct_name.t * type_expr option
+    | TEunion of Union_name.t * type_expr option 
 
 let rec string_of_type = function
     | TEu8 -> "u8" | TEu16 -> "u16" | TEu32 -> "u32" | TEu64 -> "u64" | TEu128 -> "u128"
     | TEi8 -> "i8" | TEi16 -> "i16" | TEi32 -> "i32" | TEi64 -> "i64" | TEi128 -> "i128"
     | TEDiverge -> "~"
+    | TEEmpty -> "Empty"
+    | TEBool -> "Bool"
+    | TEGeneric c -> String.make 1 c
+
+    | TEunion (union_name, maybe_type_param) ->
+        let maybe_type_param_str =
+            match maybe_type_param with
+            | Some type_param -> Fmt.str "<%s>" (string_of_type type_param)
+            | None            -> "" in
+        Fmt.str "%s%s" (Union_name.to_string union_name) maybe_type_param_str
     | TEstruct (struct_name, maybe_type_param) ->
         let maybe_type_param_str =
             match maybe_type_param with
             | Some type_param -> Fmt.str "<%s>" (string_of_type type_param)
             | None            -> "" in
         Fmt.str "%s%s" (Struct_name.to_string struct_name) maybe_type_param_str
-    | TEEmpty -> "Empty"
-    | TEBool -> "Bool"
-    | TEGeneric -> "T"
 
-type field_defn = TField of modifier * type_expr option * Field_name.t
+type field_defn = TField of modifier option * type_expr option * Field_name.t
 
 type param =
     | TParam of type_expr option * Var_name.t * borrowed_ref option * modifier option
@@ -88,6 +109,7 @@ let get_params_types params =
 type bin_op =
     | BinOpPlus | BinOpMinus
     | BinOpMult | BinOpIntDiv | BinOpRem
+    | BinOpPower | BinOpRoot
     | BinOpLessThan | BinOpLessThanEq | BinOpGreaterThan | BinOpGreaterThanEq
     | BinOpAnd | BinOpOr | BinOpLOr | BinOpLAnd
     | BinOpEq | BinOpNotEq
@@ -98,6 +120,8 @@ let string_of_bin_op = function
     | BinOpMult          -> "*"
     | BinOpIntDiv        -> "/"
     | BinOpRem           -> "%"
+    | BinOpPower         -> "^"
+    | BinOpRoot          -> "-/"
     | BinOpLessThan      -> "<"
     | BinOpLessThanEq    -> "<="
     | BinOpGreaterThan   -> ">"
@@ -139,7 +163,6 @@ let string_of_pipe_op = function
     | PipeOpBindRight -> "=>"
 
 (* Exceptions *)
-
 exception NotDesugaredGenericType of string
 
 (* Thrown if a later compiler stage encounters generic types when it expects it to be
@@ -156,7 +179,7 @@ module AstPP = struct
         | None -> "None"
 
     let pprint_modifier ppf ~indent modifier =
-        Fmt.pf ppf "%sModifier: %s@." indent (string_of_modifier modifier)
+        Fmt.pf ppf "%sModifier: %s@." indent (string_of_maybe_modified modifier)
 
     let pprint_type_expr ppf ~indent type_expr =
         Fmt.pf ppf "%sType expr: %s@." indent (string_of_type type_expr)
