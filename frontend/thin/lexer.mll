@@ -36,10 +36,11 @@ let greek = "a" | "α" | "β" | "γ" | "δ" | "ε" | "ζ" | "η" | "θ" | "ι" |
     | "ΐ" | "῔" | "῕" | "ῖ" | "ῗ" | "Ῐ" | "Ῑ" | "Ὶ" | "Ί" | "῜" | "῝" | "῞" | "῟" | "ῠ" | "ῡ" | "ῢ" | "ΰ" | "ῤ" | "ῥ" | "ῦ" 
     | "ῧ" | "Ῠ" | "Ῡ" | "Ὺ" | "Ύ" | "Ῥ" | "῭" | "΅" | "`" | "῰" | "῱" | "ῲ" | "ῳ" | "ῴ" | "῵" | "ῶ" | "ῷ" | "Ὸ" | "Ό" | "Ὼ" 
     | "Ώ" | "ῼ" | "´" | "῾"
+let extra = '_' | '\'' | '"'
 
 (* Regexes for tokens *)
 let int = '-'? digit+
-let id = ((alpha) (alpha|digit|'_')*) | greek
+let id = ((alpha) (alpha|digit|extra)*) | greek
 let generic_type_param =  ['A'-'Z']
 
 let whitespace = [' ' '\t']+
@@ -51,7 +52,8 @@ let newline = '\r' | '\n' | "\r\n"
  *   2) Match first rule (hence id is listed after keywords) 
  *)
 
-    rule read_token = parse 
+(** Main token rule. These keywords are getting lexed right away when reading through a source file. *)
+rule read_token = parse 
     | "(" { LPAREN }
     | ")" { RPAREN }
     | "{" { LBRACE }
@@ -84,6 +86,7 @@ let newline = '\r' | '\n' | "\r\n"
     | "::" { TAKE }
     | "!" { EXCLAMATION_MARK }
     | "~" { TILDE }
+    | "_" { WILDCARD }
 
     | "i8" { T_I8 }
     | "i16" { T_I16 }
@@ -104,12 +107,13 @@ let newline = '\r' | '\n' | "\r\n"
     | "const" { CONST }
     | "mut" { MUT }
     | "in" { IN }
-    | "struct" { STRUCT }
-    | "union" { UNION }
-    | "enum" { ENUM }
     | "match" { MATCH }
     | "*" { BORROWED }
     | "&" { REF }
+
+    | "struct" { STRUCT }
+    | "union" { UNION }
+    | "enum" { ENUM }
 
     | "true" { TRUE }
     | "false" { FALSE }
@@ -131,17 +135,20 @@ let newline = '\r' | '\n' | "\r\n"
         raise (SyntaxError ("Illegal character: " ^ Lexing.lexeme lexbuf)) 
     }
 
+    (** Those tokens only are read when a single line comment is found *)
     and read_single_line_comment = parse
     | newline { next_line lexbuf; read_token lexbuf } 
     | eof { EOF }
     | _ { read_single_line_comment lexbuf } 
 
+    (** Those tokens only are read when a multi-line comment is found *)
     and read_multi_line_comment = parse
     | "*/" { read_token lexbuf } 
     | newline { next_line lexbuf; read_multi_line_comment lexbuf } 
-    | eof { raise (SyntaxError ("Unexpected EOF - please terminate your comment.")) }
+    | eof { raise (SyntaxError ("Unexpected EOF - this comment is not terminated.")) }
     | _ { read_multi_line_comment lexbuf } 
 
+    (** Those tokens only are read when raw string expression is found *)
     and read_string buf = parse
     | '"'       { STRING (Buffer.contents buf) }
     | '\\' '/'  { Buffer.add_char buf '/'; read_string buf lexbuf }
