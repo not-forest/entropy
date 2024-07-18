@@ -1,0 +1,32 @@
+/*
+ *  This example defines several custom unions and structures and does simple operations on them and their methods.
+ */
+
+/* Here we define an zero sized error structure to do error handling. */
+struct Error;
+
+/* This enum contains three different anonymous structures. Each define a complex number differently. */
+enum Complex = 
+    | General: struct<T> = x: T; y: T;
+    | Polar: struct<T, A> = r: T; θ: A;
+    | Exp: struct<T, A> = r: T; θ: A;  
+
+/* Here we convert any variant of complex value to a general representation. */
+fn Complex !< any2general z = match z in 
+    | General -> z
+    | Polar | Exp -> { z.r * cos << z.θ, z.r * sin << z.θ }; 
+
+fn Complex !< add_complex z1, z2 = match (z1, z2) in
+    | (General, General) -> { z1.x + z2.x, z1.y + z2.y } 
+    | (General, _) -> (add_complex << z1, (any2general << z2))
+    | _ -> add_complex << add_complex << (any2general << z1), z2;
+
+/* In this example we add complex numbers in different representations. */
+fn i32 !< main = {
+    let z1: Complex = { 2, 2 };
+    let z2 = { 4, 0 } Polar;
+
+    let z3 = add_complex << z1, z2;
+
+    !< 0;
+}
