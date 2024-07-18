@@ -67,19 +67,18 @@ let string_of_maybe_generics = function
 type type_expr =
     | TEu8 | TEu16 | TEu32 | TEu64 | TEu128
     | TEi8 | TEi16 | TEi32 | TEi64 | TEi128
-    | TEDiverge
     | TEBool
-    | TEEmpty
+    | TEDiverge | TEEmpty | TEWild
     | TEGeneric of char
     (** optionally specify type parameters *)
     | TEstruct of Struct_name.t * type_expr option
     | TEunion of Union_name.t * type_expr option 
+    | TEtuple of type_expr list
 
 let rec string_of_type = function
     | TEu8 -> "u8" | TEu16 -> "u16" | TEu32 -> "u32" | TEu64 -> "u64" | TEu128 -> "u128"
     | TEi8 -> "i8" | TEi16 -> "i16" | TEi32 -> "i32" | TEi64 -> "i64" | TEi128 -> "i128"
-    | TEDiverge -> "~"
-    | TEEmpty -> "Empty"
+    | TEDiverge -> "~" | TEEmpty -> "Empty" | TEWild -> "Wildcard"
     | TEBool -> "Bool"
     | TEGeneric c -> String.make 1 c
 
@@ -95,6 +94,8 @@ let rec string_of_type = function
             | Some type_param -> Fmt.str "<%s>" (string_of_type type_param)
             | None            -> "" in
         Fmt.str "%s%s" (Struct_name.to_string struct_name) maybe_type_param_str
+    | TEtuple types -> 
+        List.fold types ~init:"" ~f:(fun acc t -> acc ^ (string_of_type t) ^ ", ")
 
 type field_defn = TField of modifier option * type_expr option * Field_name.t
 
