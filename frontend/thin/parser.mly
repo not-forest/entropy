@@ -14,11 +14,11 @@
 
 %token <int> INT
 %token <char> CHAR GENERIC
-%token <string> ID STRING MODNAME
+%token <string> ID STRING MODNAME RELMODNAME
 %token LPAREN RPAREN LBRACE RBRACE LANGLE RANGLE DLANGLE DRANGLE LARROW RARROW FATLARROW FATRARROW COMMA DOT COLON SEMICOLON EQUAL TAKE
 %token RETURN
 %token PLUS MINUS MULT DIV MOD POWER ROOT AND OR DAND DOR EXCLAMATION_MARK TILDE WILDCARD
-%token LET CONST MUT FUNCTION IN REF ASYNC STRUCT UNION ENUM INCLUDE MATCH
+%token LET CONST MUT FUNCTION IN REF ASYNC STRUCT UNION ENUM MATCH
 %token T_I8 T_I16 T_I32 T_I64 T_I128 T_U8 T_U16 T_U32 T_U64 T_U128 T_BOOL T_EMPTY
 %token BORROWED TRUE FALSE IF ELSE FOR WHILE EOF
 
@@ -72,20 +72,26 @@ e.g. * has higher precedence than +  so 1 + 2 * 3  = 1 + (2 * 3)
 %% /* Start grammar productions */
 
 program: 
-    | struct_defns=list(struct_defn);
-      union_defns=list(union_defn);
-      function_defns=list(function_defn);
-      EOF 
-      {Prog(
-        struct_defns @ !anonym_structs, 
-        union_defns @ !anonym_unions, 
-        function_defns)
-      }
+    |   included_modules=list(included_module) 
+        struct_defns=list(struct_defn);
+        union_defns=list(union_defn);
+        function_defns=list(function_defn);
+        EOF 
+        {Prog(
+            included_modules,
+            struct_defns @ !anonym_structs, 
+            union_defns @ !anonym_unions, 
+            function_defns)
+        }
 
 /* Imports / Preprocessing */
 // TODO
 
 /* Productions related to struct/union/enums definitions */
+
+included_module:
+    | imod=MODNAME { Absolute(imod) } 
+    | imod=RELMODNAME { Relative(imod) }
 
 struct_defn:
     | STRUCT; name=option(ID); maybe_generic=option(generic_type); EQUAL LBRACE; field_defns=list(field_defn); method_defns=list(method_defn); RBRACE 
