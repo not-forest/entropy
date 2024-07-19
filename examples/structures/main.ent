@@ -2,6 +2,8 @@
  *  This example defines several custom unions and structures and does simple operations on them and their methods.
  */
 
+include core::intrinsics::{cos, sin}
+
 /* Here we define an zero sized error structure to do error handling. */
 struct Error;
 
@@ -23,7 +25,7 @@ fn Complex !< add_complex z1, z2 = match (z1, z2) in
 
 /* In this example we add complex numbers in different representations. */
 fn i32 !< main = {
-    let z1: Complex = { 2, 2 };
+    let z1: Complex = { .x << 2, .y << 2 };
     let z2 = { 4, 0 } Polar;
 
     let z3 = add_complex << z1, z2;
