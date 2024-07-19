@@ -35,6 +35,10 @@ and block_expr = Block of pos * expr option list
 
 and async_expr = AsyncExpr of block_expr
 
+type included_module =
+    | Absolute of string
+    | Relative of string
+
 (* Function defn consists of the function name, return type, the list of params, and the
    body expr of the function *)
 type function_defn =
@@ -76,7 +80,7 @@ let type_expr_of_union = function
 
 (* Each program defines the structes, followed by functions, followed by the main
    expression to execute. *)
-type program = Prog of struct_defn list * union_defn list * function_defn list
+type program = Prog of included_module list * struct_defn list * union_defn list * function_defn list
 
 module PastPP = struct
     open Ast
@@ -205,7 +209,7 @@ module PastPP = struct
         Fmt.pf ppf "%sRight Arm: " new_indent;
         match maybe_expr with
         | Some expr -> pprint_expr ppf ~indent:"" expr
-        | None -> Fmt.pf ppf "%sNone@." new_indent
+        | None -> Fmt.pf ppf "None@."
 
     let pprint_function_defn ppf ~indent
         (TFunction
@@ -243,7 +247,7 @@ module PastPP = struct
             ( struct_name
             , maybe_generic
             , field_defns
-            , method_defns )) =
+            , method_defns ))=
         Fmt.pf ppf "%sStruct: %s<%s>\n" indent
             (Struct_name.to_string struct_name)
             (string_of_maybe_generics maybe_generic) ;
@@ -264,9 +268,14 @@ module PastPP = struct
         List.iter ~f:(AstPP.pprint_field_defn ppf ~indent:new_indent) field_defns ;
         List.iter ~f:(pprint_method_defn ppf ~indent:new_indent) method_defns
 
-    let pprint_program ppf (Prog (struct_defns, union_defns, function_defns)) =
+    let pprint_module ppf ~indent = function
+        | Absolute s -> Fmt.pf ppf "%sAbs: %s@." indent s
+        | Relative s -> Fmt.pf ppf "%sRel: %s@." indent s
+
+    let pprint_program ppf (Prog (included_modules, struct_defns, union_defns, function_defns)) =
         Fmt.pf ppf "Program@." ;
         let indent = "└──" in
+        List.iter ~f:(pprint_module ppf ~indent) included_modules ;
         List.iter ~f:(pprint_struct_defn ppf ~indent) struct_defns ;
         List.iter ~f:(pprint_union_defn ppf ~indent) union_defns ;
         List.iter ~f:(pprint_function_defn ppf ~indent) function_defns
