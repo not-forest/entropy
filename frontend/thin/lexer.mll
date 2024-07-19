@@ -43,6 +43,10 @@ let int = '-'? digit+
 let id = ((alpha) (alpha|digit|extra)*) | greek
 let generic_type_param =  ['A'-'Z']
 
+let relative_face = ("^-^") (" ")*
+let modsymb = "::" | "{" | "}" | "," | " " | "\n"
+let modname = ((alpha) (alpha|digit|modsymb)*)
+
 let whitespace = [' ' '\t']+
 let newline = '\r' | '\n' | "\r\n"
 
@@ -101,7 +105,6 @@ rule read_token = parse
     | "bool" { T_BOOL }
     | "empty" { T_EMPTY }
 
-    | "include" { INCLUDE }
     | "fn" { FUNCTION }
     | "let" { LET }
     | "const" { CONST }
@@ -121,6 +124,7 @@ rule read_token = parse
     | "if" { IF }
     | "else" { ELSE }
     | "for" { FOR }
+    | "include" { read_includes lexbuf }
     | generic_type_param { GENERIC (Lexing.lexeme lexbuf).[0] }
     | whitespace { read_token lexbuf }
     | "//" { read_single_line_comment lexbuf }
@@ -134,6 +138,18 @@ rule read_token = parse
     | _ {
         raise (SyntaxError ("Illegal character: " ^ Lexing.lexeme lexbuf)) 
     }
+    
+    (** Those tokens are only read when including additional modules. *)
+    and read_includes = parse
+    | (relative_face) (modname) { 
+        RELMODNAME( 
+            String.sub (Lexing.lexeme lexbuf) 3 (String.length (Lexing.lexeme lexbuf) - 3) |> String.trim 
+        ) 
+    }
+    | modname { MODNAME (Lexing.lexeme lexbuf) }
+    | newline { next_line lexbuf; read_token lexbuf }
+    | eof { raise (SyntaxError ("Unexpected EOF - expected module include")) }
+    | _ { read_includes lexbuf } 
 
     (** Those tokens only are read when a single line comment is found *)
     and read_single_line_comment = parse
